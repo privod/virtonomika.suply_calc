@@ -163,10 +163,15 @@ var run = function() {
   
     for (var i = 0; i < store.products.length; i++) {
         // debugger;
-        var mixShipment = store.products[i].storeShipment.mix(store.products[i].orders);
-        viewProp(store.products[i].view, 'Качество (прогноз)', mixShipment.quality.toFixed(2));
-        viewProp(store.products[i].view, 'Количество (прогноз)', mixShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
-        viewProp(store.products[i].view, 'Себестоимость (прогноз)', '$' + mixShipment.price.toFixed(2));
+        var ordersShipment = Shipment.mix(store.products[i].orders);
+        viewProp(store.products[i].view, 'Качество (заказ)', ordersShipment.quality.toFixed(2));
+        viewProp(store.products[i].view, 'Количество (заказ)', ordersShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
+        viewProp(store.products[i].view, 'Себестоимость (заказ)', '$' + ordersShipment.price.toFixed(2));
+        
+        var forecastStoreShipment = store.products[i].storeShipment.mix(store.products[i].orders);
+        viewProp(store.products[i].view, 'Качество (прогноз)', forecastStoreShipment.quality.toFixed(2));
+        viewProp(store.products[i].view, 'Количество (прогноз)', forecastStoreShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
+        viewProp(store.products[i].view, 'Себестоимость (прогноз)', '$' + forecastStoreShipment.price.toFixed(2));
     }
 
     console.dir(store);
