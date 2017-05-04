@@ -147,22 +147,30 @@ var run = function() {
             product.storeShipment.count = parseCount(table[1].rows[0].cells[1].textContent);
             var spentCount = parseInt(parseCount(table[0].rows[0].cells[1].textContent));     // Будет израсходовано на этой недели
             product.storeShipment.count -= spentCount;
+            if (product.storeShipment.count < 0) {
+                product.storeShipment.count = 0; 
+            }
             store.products.push(product);
         }
 
-        // debugger;
-        var shipment = new Shipment();
-        shipment.price = parsePrice($('td[id^=price_rules] + td', this).text());
-        shipment.quality = parseQuality($('td[id^=quality_rules] + td', this).text());
-        var count = parseCount($('input[id^=qc]', this)[0].value);
+        //~ debugger;
+
+        var orderCount = parseCount($('input[id^=qc]', this)[0].value);
         var freeCount = parseCount($('tr[id^=at_storage] :last-child', this).text());
-        shipment.count = count < freeCount ? count : freeCount;
-        product.orders.push(shipment);
+        var count = orderCount < freeCount ? orderCount : freeCount;
+
+        if (count) {
+            var shipment = new Shipment();
+            shipment.count = count;
+            shipment.price = parsePrice($('td[id^=price_rules] + td', this).text());
+            shipment.quality = parseQuality($('td[id^=quality_rules] + td', this).text());
+            product.orders.push(shipment);
+        }
 
     });
   
+    //~ debugger;
     for (var i = 0; i < store.products.length; i++) {
-        // debugger;
         var ordersShipment = Shipment.mix(store.products[i].orders);
         viewProp(store.products[i].view, 'Качество (заказ)', ordersShipment.quality.toFixed(2));
         viewProp(store.products[i].view, 'Количество (заказ)', ordersShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
