@@ -23,6 +23,10 @@ var run = function() {
         return parseInt(str) || 0;
     }
     
+    function countToString(count) {
+      return count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 ')
+    }
+    
     class Shipment {
         constructor () {
             this.price = null;
@@ -48,8 +52,8 @@ var run = function() {
         }
         
         mix(shipments) {
-            shipments.push(this);
-            return Shipment.mix(shipments);
+            var mixShipments = shipments.concat(this);
+            return Shipment.mix(mixShipments);
         }
 
         cost() {
@@ -63,15 +67,32 @@ var run = function() {
     }
 
     class Product {
-        constructor(name) {
+        constructor(name, view) {
             this.name = name;
             this.orders = [];
             this.storeShipment = null;
 
-            this.view = null;
+            this.view = view;
+            viewPropCre(this.view, 'order-quality',    'Качество (заказ)');
+            viewPropCre(this.view, 'order-count',      'Количество (заказ)');
+            viewPropCre(this.view, 'order-price',      'Себестоимость (заказ)');
+            viewPropCre(this.view, 'forecast-quality', 'Качество (прогноз)');
+            viewPropCre(this.view, 'forecast-count',   'Количество (прогноз)');
+            viewPropCre(this.view, 'forecast-price',   'Себестоимость (прогноз)');            
         }
 
-
+        viewUpdate() {
+            
+            var ordersShipment = Shipment.mix(this.orders);
+            var td = $('td.order-quality', this.view)[0];
+            $('td.order-quality', this.view)[0].textContent = ordersShipment.quality.toFixed(2);;
+            $('td.order-count',   this.view)[0].textContent = countToString(ordersShipment.count);
+            $('td.order-price',   this.view)[0].textContent = '$' + ordersShipment.price.toFixed(2);
+            var forecastStoreShipment = this.storeShipment.mix(this.orders);
+            $('td.forecast-quality', this.view)[0].textContent = forecastStoreShipment.quality.toFixed(2);
+            $('td.forecast-count',   this.view)[0].textContent = countToString(forecastStoreShipment.count);
+            $('td.forecast-price',   this.view)[0].textContent = '$' + forecastStoreShipment.price.toFixed(2);
+        }
     }
 
     class Store {
@@ -106,16 +127,20 @@ var run = function() {
 //        }
     }
 
-    function viewProp(table, name, val) {
+    // function viewPropCre(table, cls , name, val) {
+    function viewPropCre(table, cls , name) {
+        
         var row = table.insertRow();
         var cellName = row.insertCell(0);
-        var cellVal = row.insertCell(1);
         cellName.style = 'color:orange';
+        var cellVal = row.insertCell(1);
+        cellVal.className = cls;
         cellVal.align = 'right';
         cellVal.style = 'color:orange';
-
         cellName.textContent = name;
-        cellVal.textContent = val;
+        // cellVal.textContent = 0;
+        
+        return row
     }
 
     function findElem(root, selector, part) {
@@ -128,19 +153,38 @@ var run = function() {
         }
 
     }
+    
+    function parceShipment(row, shipment) {
+        // debugger;
+        var inp = $('input[id^=qc]', row)[0];
+        var orderCount = parseCount(inp.value);
+        var freeCount = parseCount($('tr[id^=at_storage] :last-child', row).text());
+        var count = orderCount < freeCount ? orderCount : freeCount;
+
+        // if (count) {
+            if (null == shipment) {
+              shipment = new Shipment();
+            }
+            shipment.count = count;
+            shipment.price = parsePrice($('td[id^=price_rules] + td', row).text());
+            shipment.quality = parseQuality($('td[id^=quality_rules] + td', row).text());
+        // }
+        
+        return shipment;
+    }
 
 //    var products = {};
     var store = new Store();
   
     $('tr.even, tr.odd').each ( function() {
+        var row = this;
 
-        var name = $('div.product_box_wo_truck', this)[0].parentElement.title;
+        var name = $('div.product_box_wo_truck', row)[0].parentElement.title;
 
         var product = store.getProductByName(name);
         if (null == product) {
-            product = new Product(name);
-            var table = $('table', this);
-            product.view = table[1];
+            var table = $('table', row);
+            product = new Product(name, table[1]);
             product.storeShipment = new Shipment();
             product.storeShipment.price = parsePrice(table[1].rows[2].cells[1].textContent);
             product.storeShipment.quality = parseQuality(table[1].rows[1].cells[1].textContent);
@@ -155,31 +199,42 @@ var run = function() {
 
         //~ debugger;
 
-        var orderCount = parseCount($('input[id^=qc]', this)[0].value);
-        var freeCount = parseCount($('tr[id^=at_storage] :last-child', this).text());
+        /* var orderCount = parseCount($('input[id^=qc]', row)[0].value);
+        var freeCount = parseCount($('tr[id^=at_storage] :last-child', row).text());
         var count = orderCount < freeCount ? orderCount : freeCount;
 
         if (count) {
             var shipment = new Shipment();
             shipment.count = count;
-            shipment.price = parsePrice($('td[id^=price_rules] + td', this).text());
-            shipment.quality = parseQuality($('td[id^=quality_rules] + td', this).text());
+            shipment.price = parsePrice($('td[id^=price_rules] + td', row).text());
+            shipment.quality = parseQuality($('td[id^=quality_rules] + td', row).text());
             product.orders.push(shipment);
+        } //  */
+        var shipment = parceShipment(row, null);
+        product.orders.push(shipment);
+        
+        
+        var inp = $('input.quickchange', row)[0]
+        inp.oninput = function() {
+            // debugger;
+            parceShipment(row, shipment);
+            product.viewUpdate();
         }
 
     });
   
     //~ debugger;
     for (var i = 0; i < store.products.length; i++) {
-        var ordersShipment = Shipment.mix(store.products[i].orders);
-        viewProp(store.products[i].view, 'Качество (заказ)', ordersShipment.quality.toFixed(2));
-        viewProp(store.products[i].view, 'Количество (заказ)', ordersShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
-        viewProp(store.products[i].view, 'Себестоимость (заказ)', '$' + ordersShipment.price.toFixed(2));
+        store.products[i].viewUpdate();
+        // var ordersShipment = Shipment.mix(store.products[i].orders);
+        // viewProp(store.products[i].view, 'Качество (заказ)', ordersShipment.quality.toFixed(2));
+        // viewProp(store.products[i].view, 'Количество (заказ)', countToString(ordersShipment.count));
+        // viewProp(store.products[i].view, 'Себестоимость (заказ)', '$' + ordersShipment.price.toFixed(2));
         
-        var forecastStoreShipment = store.products[i].storeShipment.mix(store.products[i].orders);
-        viewProp(store.products[i].view, 'Качество (прогноз)', forecastStoreShipment.quality.toFixed(2));
-        viewProp(store.products[i].view, 'Количество (прогноз)', forecastStoreShipment.count.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 '));
-        viewProp(store.products[i].view, 'Себестоимость (прогноз)', '$' + forecastStoreShipment.price.toFixed(2));
+        // var forecastStoreShipment = store.products[i].storeShipment.mix(store.products[i].orders);
+        // viewProp(store.products[i].view, 'Качество (прогноз)', forecastStoreShipment.quality.toFixed(2));
+        // viewProp(store.products[i].view, 'Количество (прогноз)', countToString(forecastStoreShipment.count.));
+        // viewProp(store.products[i].view, 'Себестоимость (прогноз)', '$' + forecastStoreShipment.price.toFixed(2));
     }
 
     console.dir(store);
