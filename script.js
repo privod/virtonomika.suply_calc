@@ -9,8 +9,10 @@ var run = function() {
 
 // ============================================================================
     function parsePrice(str) {
-        var reg = str.match(/\d+\.\d+/g);
-        return (reg == null) ? 0 : parseFloat(reg[reg.length - 1]);
+        if (typeof(str) == "string") {
+          var reg = str.match(/\d+\.\d+/g);
+        }
+        return reg ? parseFloat(reg[reg.length - 1]) : 0;
     }
 
     function parseQuality(str) {
@@ -19,7 +21,9 @@ var run = function() {
 
     function parseCount(str) {
         // debugger;
-        str = str.replace(/\s+/g, '');
+        if (typeof(str) == "string") {
+          str = str.replace(/\s+/g, '');
+        }
         return parseInt(str) || 0;
     }
     
@@ -157,7 +161,9 @@ var run = function() {
     function parceShipment(row, shipment) {
         // debugger;
         var inp = $('input[id^=qc]', row)[0];
-        var orderCount = parseCount(inp.value);
+        if (inp) {
+          var orderCount = parseCount(inp.value);
+        }
         var freeCount = parseCount($('tr[id^=at_storage] :last-child', row).text());
         var count = orderCount < freeCount ? orderCount : freeCount;
 
@@ -186,10 +192,10 @@ var run = function() {
             var table = $('table', row);
             product = new Product(name, table[1]);
             product.storeShipment = new Shipment();
-            product.storeShipment.price = parsePrice(table[1].rows[2].cells[1].textContent);
-            product.storeShipment.quality = parseQuality(table[1].rows[1].cells[1].textContent);
-            product.storeShipment.count = parseCount(table[1].rows[0].cells[1].textContent);
-            var spentCount = parseInt(parseCount(table[0].rows[0].cells[1].textContent));     // Будет израсходовано на этой недели
+            product.storeShipment.price = parsePrice(table[1].rows[2].cells[1].textContent | 0);
+            product.storeShipment.quality = parseQuality(table[1].rows[1].cells[1].textContent | 0);
+            product.storeShipment.count = parseCount(table[1].rows[0].cells[1].textContent | 0);
+            var spentCount = parseInt(parseCount(table[0].rows[0].cells[1].textContent | 0));     // Будет израсходовано на этой недели
             product.storeShipment.count -= spentCount;
             if (product.storeShipment.count < 0) {
                 product.storeShipment.count = 0; 
@@ -215,10 +221,12 @@ var run = function() {
         
         
         var inp = $('input.quickchange', row)[0]
-        inp.oninput = function() {
-            // debugger;
-            parceShipment(row, shipment);
-            product.viewUpdate();
+        if (inp) {
+            inp.oninput = function() {
+                // debugger;
+                parceShipment(row, shipment);
+                product.viewUpdate();
+            }
         }
 
     });
