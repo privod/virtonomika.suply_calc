@@ -187,15 +187,16 @@ var run = function() {
 
         var name = $('div.product_box_wo_truck', row)[0].parentElement.title;
 
+		debugger;
         var product = store.getProductByName(name);
         if (null == product) {
             var table = $('table', row);
             product = new Product(name, table[1]);
             product.storeShipment = new Shipment();
-            product.storeShipment.price = parsePrice(table[1].rows[2].cells[1].textContent | 0);
-            product.storeShipment.quality = parseQuality(table[1].rows[1].cells[1].textContent | 0);
-            product.storeShipment.count = parseCount(table[1].rows[0].cells[1].textContent | 0);
-            var spentCount = parseInt(parseCount(table[0].rows[0].cells[1].textContent | 0));     // Будет израсходовано на этой недели
+            product.storeShipment.price = parsePrice(table[1].rows[2].cells[1].textContent);
+            product.storeShipment.quality = parseQuality(table[1].rows[1].cells[1].textContent);
+            product.storeShipment.count = parseCount(table[1].rows[0].cells[1].textContent);
+            var spentCount = parseInt(parseCount(table[0].rows[0].cells[1].textContent));     // Будет израсходовано на этой недели
             product.storeShipment.count -= spentCount;
             if (product.storeShipment.count < 0) {
                 product.storeShipment.count = 0; 
