@@ -9,8 +9,10 @@ var run = function() {
 
 // ============================================================================
     function parsePrice(str) {
-        var reg = str.match(/\d+\.\d+/g);
-        return (reg == null) ? 0 : parseFloat(reg[reg.length - 1]);
+        // debugger;
+        // var reg = str.match(/\d+\.\d+/g);
+        // return (reg == null) ? 0 : parseFloat(reg[reg.length - 1]);
+        return parseFloat(str.replace(/[^\d.,]/g, ""))
     }
 
     function parseQuality(str) {
@@ -37,15 +39,15 @@ var run = function() {
         static mix(shipments) {
             var mixCount = 0;
             var mixSpecCount = 0;
-            var mixCost = 0;
+            var mixSum = 0;
             for (var i = 0; i < shipments.length; i++) {
                 mixCount += shipments[i].count;
                 mixSpecCount += shipments[i].specCount();
-                mixCost += shipments[i].cost();
+                mixSum += shipments[i].cost();
             }
 
             var mixShipment = new Shipment();
-            mixShipment.price = mixCost / mixCount;
+            mixShipment.price = mixSum / mixCount;
             mixShipment.quality = mixSpecCount / mixCount;
             mixShipment.count = mixCount;
             return mixShipment;
