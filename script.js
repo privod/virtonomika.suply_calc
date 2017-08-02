@@ -9,10 +9,15 @@ var run = function() {
 
 // ============================================================================
     function parsePrice(str) {
-        // debugger;
-        // var reg = str.match(/\d+\.\d+/g);
-        // return (reg == null) ? 0 : parseFloat(reg[reg.length - 1]);
-        return parseFloat(str.replace(/[^\d.,]/g, ""))
+        // if (typeof(str) == "string") {
+        //   var reg = str.match(/\d+\.\d+/g);
+        // }
+        // return reg ? parseFloat(reg[reg.length - 1]) : 0;
+        if (typeof(str) == "string") {
+          return parseFloat(str.replace(/[^\d.,]/g, ""));
+        }
+
+        return 0;
     }
 
     function parseQuality(str) {
@@ -21,7 +26,9 @@ var run = function() {
 
     function parseCount(str) {
         // debugger;
-        str = str.replace(/\s+/g, '');
+        if (typeof(str) == "string") {
+          str = str.replace(/\s+/g, '');
+        }
         return parseInt(str) || 0;
     }
     
@@ -159,7 +166,9 @@ var run = function() {
     function parceShipment(row, shipment) {
         // debugger;
         var inp = $('input[id^=qc]', row)[0];
-        var orderCount = parseCount(inp.value);
+        if (inp) {
+          var orderCount = parseCount(inp.value);
+        }
         var freeCount = parseCount($('tr[id^=at_storage] :last-child', row).text());
         var count = orderCount < freeCount ? orderCount : freeCount;
 
@@ -183,6 +192,7 @@ var run = function() {
 
         var name = $('div.product_box_wo_truck', row)[0].parentElement.title;
 
+		debugger;
         var product = store.getProductByName(name);
         if (null == product) {
             var table = $('table', row);
@@ -217,10 +227,12 @@ var run = function() {
         
         
         var inp = $('input.quickchange', row)[0]
-        inp.oninput = function() {
-            // debugger;
-            parceShipment(row, shipment);
-            product.viewUpdate();
+        if (inp) {
+            inp.oninput = function() {
+                // debugger;
+                parceShipment(row, shipment);
+                product.viewUpdate();
+            }
         }
 
     });
